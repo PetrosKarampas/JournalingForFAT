@@ -217,6 +217,7 @@ static int fat_write_begin(struct file *file, struct address_space *mapping,
 			struct page **pagep, void **fsdata)
 {
 	int err;
+	printk(KERN_INFO "STUDENT MESSAGE: About to write a page into a block(inode.c/fat_write_begin)");
 
 	*pagep = NULL;
 	err = cont_write_begin(file, mapping, pos, len, flags,
@@ -708,6 +709,7 @@ static void delayed_free(struct rcu_head *p)
 
 static void fat_put_super(struct super_block *sb)
 {
+	printk(KERN_INFO "STUDENT MESSAGE: Releasing the FAT filesystem's superblock (inode.c/fat_put_super)");
 	struct msdos_sb_info *sbi = MSDOS_SB(sb);
 
 	fat_set_state(sb, 0, 0);
@@ -722,6 +724,7 @@ static struct kmem_cache *fat_inode_cachep;
 
 static struct inode *fat_alloc_inode(struct super_block *sb)
 {
+	printk(KERN_INFO "STUDENT MESSAGE: Allocating new inode for FAT (inode.c/fat_alloc_inode)");
 	struct msdos_inode_info *ei;
 	ei = kmem_cache_alloc(fat_inode_cachep, GFP_NOFS);
 	if (!ei)
@@ -882,6 +885,7 @@ retry:
 static int fat_write_inode(struct inode *inode, struct writeback_control *wbc)
 {
 	int err;
+	printk(KERN_INFO "STUDENT MESSAGE: Updating an inode (inode.c/fat_write_inode)");
 
 	if (inode->i_ino == MSDOS_FSINFO_INO) {
 		struct super_block *sb = inode->i_sb;
@@ -1597,7 +1601,7 @@ int fat_fill_super(struct super_block *sb, void *data, int silent, int isvfat,
 	long error;
 	char buf[50];
 
-	printk(KERN_INFO "\n Student Message: Filling up the fat super block (file: fs/fat/inode.c)\n");
+	printk(KERN_INFO "\nSTUDENT MESSAGE: Filling up the fat super block (file: inode.c/fat_fill_super)");
 	/*
 	 * GFP_KERNEL is ok here, because while we do hold the
 	 * superblock lock, memory pressure can't call back into

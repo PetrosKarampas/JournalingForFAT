@@ -52,6 +52,7 @@ static int vfat_revalidate_shortname(struct dentry *dentry)
 
 static int vfat_revalidate(struct dentry *dentry, unsigned int flags)
 {
+	printk(KERN_INFO "STUDENT MESSAGE: Revalidating a dentry (namei_vfat.c/vfat_revalidate)");
 	if (flags & LOOKUP_RCU)
 		return -ECHILD;
 
@@ -785,6 +786,7 @@ static int vfat_create(struct inode *dir, struct dentry *dentry, umode_t mode,
 	struct fat_slot_info sinfo;
 	struct timespec ts;
 	int err;
+	printk(KERN_INFO "STUDENT MESSAGE: Creating a new inode(namei_vfat.c/vfat_create)");
 
 	mutex_lock(&MSDOS_SB(sb)->s_lock);
 
@@ -817,6 +819,7 @@ static int vfat_rmdir(struct inode *dir, struct dentry *dentry)
 	struct fat_slot_info sinfo;
 	int err;
 
+	printk(KERN_INFO "STUDENT MESSAGE: Removing a directory (namei_vfat.c/vfat_rmdir)");
 	mutex_lock(&MSDOS_SB(sb)->s_lock);
 
 	err = fat_dir_empty(inode);
@@ -847,6 +850,7 @@ static int vfat_unlink(struct inode *dir, struct dentry *dentry)
 	struct super_block *sb = dir->i_sb;
 	struct fat_slot_info sinfo;
 	int err;
+	printk(KERN_INFO "STUDENT MESSAGE: Unlinking a file (namei_vfat.c/vfat_unlink)");
 
 	mutex_lock(&MSDOS_SB(sb)->s_lock);
 
@@ -874,6 +878,7 @@ static int vfat_mkdir(struct inode *dir, struct dentry *dentry, umode_t mode)
 	struct fat_slot_info sinfo;
 	struct timespec ts;
 	int err, cluster;
+	printk(KERN_INFO "STUDENT MESSAGE: Creating a new directory (namei_vfat.c/vfat_mkdir)");
 
 	mutex_lock(&MSDOS_SB(sb)->s_lock);
 
@@ -925,6 +930,7 @@ static int vfat_rename(struct inode *old_dir, struct dentry *old_dentry,
 	loff_t new_i_pos;
 	int err, is_dir, update_dotdot, corrupt = 0;
 	struct super_block *sb = old_dir->i_sb;
+	printk(KERN_INFO "STUDENT MESSAGE:Renaming an inode or a directory (namei_vfat.c/vfat_rename)");
 
 	if (flags & ~RENAME_NOREPLACE)
 		return -EINVAL;
@@ -1088,7 +1094,7 @@ MODULE_ALIAS_FS("vfat");
 
 static int __init init_vfat_fs(void)
 {
-	printk(KERN_INFO "\nStudent Message: Registering the VFAT filesystem (fat/namei_vfat.c)\n");
+	printk(KERN_INFO "\nStudent Message: Registering the VFAT filesystem (namei_vfat.c/init_vfat_fs)\n");
 	return register_filesystem(&vfat_fs_type);
 }
 

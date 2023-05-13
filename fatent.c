@@ -152,6 +152,7 @@ static int fat32_ent_get(struct fat_entry *fatent)
 
 static void fat12_ent_put(struct fat_entry *fatent, int new)
 {
+	printk(KERN_INFO "\nStudent Message: Adding a FAT12 entry in the table\n");
 	u8 **ent12_p = fatent->u.ent12_p;
 
 	if (new == FAT_ENT_EOF)
@@ -174,6 +175,7 @@ static void fat12_ent_put(struct fat_entry *fatent, int new)
 
 static void fat16_ent_put(struct fat_entry *fatent, int new)
 {
+	printk(KERN_INFO "STUDENT MESSAGE: Adding a FAT16 entry in the table (fatent.c/fat16_ent_put)\n");
 	if (new == FAT_ENT_EOF)
 		new = EOF_FAT16;
 
@@ -183,6 +185,7 @@ static void fat16_ent_put(struct fat_entry *fatent, int new)
 
 static void fat32_ent_put(struct fat_entry *fatent, int new)
 {
+	printk(KERN_INFO "\nStudent Message: Adding a FAT32 entry in the table\n");
 	WARN_ON(new & 0xf0000000);
 	new |= le32_to_cpu(*fatent->u.ent32_p) & ~0x0fffffff;
 	*fatent->u.ent32_p = cpu_to_le32(new);

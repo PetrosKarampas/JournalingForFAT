@@ -149,6 +149,7 @@ static long fat_generic_compat_ioctl(struct file *filp, unsigned int cmd,
 
 static int fat_file_release(struct inode *inode, struct file *filp)
 {
+	printk(KERN_INFO "STUDENT MESSAGE:Last reference to the file was closed, thus this fuction is called (file.c/fat_file_release)");
 	if ((filp->f_mode & FMODE_WRITE) &&
 	     MSDOS_SB(inode->i_sb)->options.flush) {
 		fat_flush_inodes(inode->i_sb, inode, NULL);
@@ -159,6 +160,7 @@ static int fat_file_release(struct inode *inode, struct file *filp)
 
 int fat_file_fsync(struct file *filp, loff_t start, loff_t end, int datasync)
 {
+	printk(KERN_INFO "STUDENT MESSAGE:Sync file's state in memory with storage device(file.c/fat_file_fsync)");
 	struct inode *inode = filp->f_mapping->host;
 	int res, err;
 
@@ -219,7 +221,6 @@ static int fat_cont_expand(struct inode *inode, loff_t size)
 out:
 	return err;
 }
-
 /*
  * Preallocate space for a file. This implements fat's fallocate file
  * operation, which gets called from sys_fallocate system call. User
@@ -237,6 +238,7 @@ static long fat_fallocate(struct file *file, int mode,
 	struct super_block *sb = inode->i_sb;
 	struct msdos_sb_info *sbi = MSDOS_SB(sb);
 	int err = 0;
+	printk(KERN_INFO "STUDENT MESSAGE:Allocate space for a file (file.c/fat_fallocate)");
 
 	/* No support for hole punch or other fallocate flags. */
 	if (mode & ~FALLOC_FL_KEEP_SIZE)
@@ -444,6 +446,7 @@ int fat_setattr(struct dentry *dentry, struct iattr *attr)
 	unsigned int ia_valid;
 	int error;
 
+	printk(KERN_INFO "STUDENT MESSAGE: Modifying file attributes (file.c/fat_setattr");
 	/* Check for setting the inode time. */
 	ia_valid = attr->ia_valid;
 	if (ia_valid & TIMES_SET_FLAGS) {
