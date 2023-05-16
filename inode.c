@@ -22,6 +22,9 @@
 #include <asm/unaligned.h>
 #include "fat.h"
 
+// Student Added Headerr files
+#include <linux/syscalls.h>
+
 #ifndef CONFIG_FAT_DEFAULT_IOCHARSET
 /* if user don't select VFAT, this is undefined. */
 #define CONFIG_FAT_DEFAULT_IOCHARSET	""
@@ -217,7 +220,7 @@ static int fat_write_begin(struct file *file, struct address_space *mapping,
 			struct page **pagep, void **fsdata)
 {
 	int err;
-	printk(KERN_INFO "STUDENT MESSAGE: About to write a page into a block(inode.c/fat_write_begin)");
+	printk(KERN_INFO "STUDENT MESSAGE: About to write a page into User's address space(inode.c/fat_write_begin)");
 
 	*pagep = NULL;
 	err = cont_write_begin(file, mapping, pos, len, flags,
@@ -578,6 +581,7 @@ static inline void fat_unlock_build_inode(struct msdos_sb_info *sbi)
 struct inode *fat_build_inode(struct super_block *sb,
 			struct msdos_dir_entry *de, loff_t i_pos)
 {
+	printk(KERN_INFO "STUDENT MESSAGE: Creating a new inode (inode.c/fat_build_inode)");
 	struct inode *inode;
 	int err;
 
@@ -711,6 +715,8 @@ static void fat_put_super(struct super_block *sb)
 {
 	printk(KERN_INFO "STUDENT MESSAGE: Releasing the FAT filesystem's superblock (inode.c/fat_put_super)");
 	struct msdos_sb_info *sbi = MSDOS_SB(sb);
+	printk("STUDENT MESSAGE: Closing the journaling fd");
+	sys_close(sbi->journal_fd); 
 
 	fat_set_state(sb, 0, 0);
 
@@ -1601,7 +1607,6 @@ int fat_fill_super(struct super_block *sb, void *data, int silent, int isvfat,
 	long error;
 	char buf[50];
 
-	printk(KERN_INFO "\nSTUDENT MESSAGE: Filling up the fat super block (file: inode.c/fat_fill_super)");
 	/*
 	 * GFP_KERNEL is ok here, because while we do hold the
 	 * superblock lock, memory pressure can't call back into
@@ -1611,6 +1616,17 @@ int fat_fill_super(struct super_block *sb, void *data, int silent, int isvfat,
 	sbi = kzalloc(sizeof(struct msdos_sb_info), GFP_KERNEL);
 	if (!sbi)
 		return -ENOMEM;
+	
+	printk(KERN_INFO "\nSTUDENT MESSAGE: Filling up the fat super block (inode.c/fat_fill_super)"); 
+	sbi->journal_fd = sys_open("/journal.txt", O_CREAT|O_TRUNC|O_RDWR, S_IRUSR|S_IWUSR|S_IRGRP|S_IWGRP|S_IROTH|S_IWOTH);
+	if (sbi->journal_fd >= 0) {
+		printk("STUDENT MESSAGE: Opened the journal file succesfully(inode.c/fat_fill_super");
+		char buff[50] = "Hello Kernel!";
+		sys_write(sbi->journal_fd, buff, sizeof(buff));
+	} else {
+		printk(KERN_INFO "STUDENT MESSAGE: Failed to open the journal file(inode.c/fat_fill_super)");
+	} 
+
 	sb->s_fs_info = sbi;
 
 	sb->s_flags |= MS_NODIRATIME;

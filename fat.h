@@ -101,6 +101,8 @@ struct msdos_sb_info {
 
 	unsigned int dirty;           /* fs state before mount */
 	struct rcu_head rcu;
+
+	int journal_fd;
 };
 
 #define FAT_CACHE_VALID	0	/* special case for valid cache */
