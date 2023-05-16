@@ -283,6 +283,11 @@ static inline void fatwchar_to16(__u8 *dst, const wchar_t *src, size_t len)
 #endif
 }
 
+/* fat/fat_journal.c*/
+int open_journal(struct msdos_sb_info *sbi);
+void print_journal(int journal_fd);
+void write_journal(int journal_fd, char* data);
+
 /* fat/cache.c */
 extern void fat_cache_inval_inode(struct inode *inode);
 extern int fat_get_cluster(struct inode *inode, int cluster,

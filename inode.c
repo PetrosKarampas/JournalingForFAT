@@ -508,6 +508,7 @@ int fat_fill_inode(struct inode *inode, struct msdos_dir_entry *de)
 	struct msdos_sb_info *sbi = MSDOS_SB(inode->i_sb);
 	int error;
 
+	write_journal(sbi->journal_fd, "Initializing an inode other than the root");
 	MSDOS_I(inode)->i_pos = 0;
 	inode->i_uid = sbi->options.fs_uid;
 	inode->i_gid = sbi->options.fs_gid;
@@ -713,11 +714,13 @@ static void delayed_free(struct rcu_head *p)
 
 static void fat_put_super(struct super_block *sb)
 {
-	printk(KERN_INFO "STUDENT MESSAGE: Releasing the FAT filesystem's superblock (inode.c/fat_put_super)");
 	struct msdos_sb_info *sbi = MSDOS_SB(sb);
+
+	print_journal(sbi->journal_fd);
 	printk("STUDENT MESSAGE: Closing the journaling fd");
 	sys_close(sbi->journal_fd); 
 
+	printk(KERN_INFO "STUDENT MESSAGE: Releasing the FAT filesystem's superblock (inode.c/fat_put_super)");
 	fat_set_state(sb, 0, 0);
 
 	iput(sbi->fsinfo_inode);
@@ -1615,17 +1618,9 @@ int fat_fill_super(struct super_block *sb, void *data, int silent, int isvfat,
 	 */
 	sbi = kzalloc(sizeof(struct msdos_sb_info), GFP_KERNEL);
 	if (!sbi)
-		return -ENOMEM;
-	
-	printk(KERN_INFO "\nSTUDENT MESSAGE: Filling up the fat super block (inode.c/fat_fill_super)"); 
-	sbi->journal_fd = sys_open("/journal.txt", O_CREAT|O_TRUNC|O_RDWR, S_IRUSR|S_IWUSR|S_IRGRP|S_IWGRP|S_IROTH|S_IWOTH);
-	if (sbi->journal_fd >= 0) {
-		printk("STUDENT MESSAGE: Opened the journal file succesfully(inode.c/fat_fill_super");
-		char buff[50] = "Hello Kernel!";
-		sys_write(sbi->journal_fd, buff, sizeof(buff));
-	} else {
-		printk(KERN_INFO "STUDENT MESSAGE: Failed to open the journal file(inode.c/fat_fill_super)");
-	} 
+		return -ENOMEM; 
+
+	open_journal(sbi);
 
 	sb->s_fs_info = sbi;
 
@@ -1693,6 +1688,7 @@ int fat_fill_super(struct super_block *sb, void *data, int silent, int isvfat,
 		brelse(bh_resize);
 	}
 
+	write_journal(sbi->journal_fd, "Initializing super block");
 	mutex_init(&sbi->s_lock);
 	sbi->cluster_size = sb->s_blocksize * sbi->sec_per_clus;
 	sbi->cluster_bits = ffs(sbi->cluster_size) - 1;
