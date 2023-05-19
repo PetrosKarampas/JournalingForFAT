@@ -508,7 +508,7 @@ int fat_fill_inode(struct inode *inode, struct msdos_dir_entry *de)
 	struct msdos_sb_info *sbi = MSDOS_SB(inode->i_sb);
 	int error;
 
-	write_journal(sbi->journal_fd, "Initializing an inode other than the root");
+	write_journal(sbi->journal_fd, "Initializing an inode other than the root\n");
 	MSDOS_I(inode)->i_pos = 0;
 	inode->i_uid = sbi->options.fs_uid;
 	inode->i_gid = sbi->options.fs_gid;
@@ -1688,8 +1688,8 @@ int fat_fill_super(struct super_block *sb, void *data, int silent, int isvfat,
 		brelse(bh_resize);
 	}
 
-	write_journal(sbi->journal_fd, "Initializing super block");
 	mutex_init(&sbi->s_lock);
+	write_journal(sbi->journal_fd, "Initializing super block\n");
 	sbi->cluster_size = sb->s_blocksize * sbi->sec_per_clus;
 	sbi->cluster_bits = ffs(sbi->cluster_size) - 1;
 	sbi->fats = bpb.fat_fats;
