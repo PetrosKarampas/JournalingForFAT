@@ -21,6 +21,7 @@ static DEFINE_SPINLOCK(fat12_entry_lock);
 static void fat12_ent_blocknr(struct super_block *sb, int entry,
 			      int *offset, sector_t *blocknr)
 {
+	printk(KERN_INFO "STUDENT MESSAGE: fat12_ent_blocknr() (inode.c/fat_write_inode line: 21)");
 	struct msdos_sb_info *sbi = MSDOS_SB(sb);
 	int bytes = entry + (entry >> 1);
 	WARN_ON(entry < FAT_START_ENT || sbi->max_cluster <= entry);
@@ -41,6 +42,7 @@ static void fat_ent_blocknr(struct super_block *sb, int entry,
 static void fat12_ent_set_ptr(struct fat_entry *fatent, int offset)
 {
 	struct buffer_head **bhs = fatent->bhs;
+	printk(KERN_INFO "STUDENT MESSAGE: fat12_ent_set_ptr() (line: 42)");
 	if (fatent->nr_bhs == 1) {
 		WARN_ON(offset >= (bhs[0]->b_size - 1));
 		fatent->u.ent12_p[0] = bhs[0]->b_data + offset;
@@ -68,7 +70,7 @@ static int fat12_ent_bread(struct super_block *sb, struct fat_entry *fatent,
 			   int offset, sector_t blocknr)
 {
 	struct buffer_head **bhs = fatent->bhs;
-
+	printk(KERN_INFO "STUDENT MESSAGE: fat12_ent_bread() (line: 69)");
 	WARN_ON(blocknr < MSDOS_SB(sb)->fat_start);
 	fatent->fat_inode = MSDOS_SB(sb)->fat_inode;
 
@@ -118,7 +120,7 @@ static int fat12_ent_get(struct fat_entry *fatent)
 {
 	u8 **ent12_p = fatent->u.ent12_p;
 	int next;
-
+	printk(KERN_INFO "STUDENT MESSAGE: fat12_ent_get() (line: 119)");
 	spin_lock(&fat12_entry_lock);
 	if (fatent->entry & 1)
 		next = (*ent12_p[0] >> 4) | (*ent12_p[1] << 4);
