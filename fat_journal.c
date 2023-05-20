@@ -11,6 +11,7 @@ int open_journal(struct msdos_sb_info *sbi) {
 	sbi->journal_fd = sys_open("/journal.txt", O_CREAT|O_APPEND|O_RDWR, 0);
 	if (sbi->journal_fd >= 0) {
 		printk("STUDENT MESSAGE: Opened the journal file succesfully");
+		write_journal(sbi->journal_fd, "Start of Journal\n");
 		return 0;
 	} 
 	printk(KERN_INFO "STUDENT MESSAGE: Failed to open the journal file");
@@ -45,7 +46,7 @@ void write_journal(int journal_fd, char* data) {
 
 void print_journal(int journal_fd) {
 	struct file *file ;
-	char buf[100];
+	char buf[100]; // We assume that the size is sufficient
 
 	file = fget(journal_fd);
 	if (!file) {
@@ -55,12 +56,10 @@ void print_journal(int journal_fd) {
 
 	vfs_llseek(file, 0, SEEK_SET); // Start reading the journal from the beginning
 	printk("STUDENT MESSAGE: Printing the Journal"); 
-	while(sys_read(journal_fd, buf, strlen(buf) - 1) > 0) {
-		printk("Journal Entry: %s", buf);
+	while(sys_read(journal_fd, buf, sizeof(buf)) > 0) {
+		printk("%s", buf);
 	} 
-	printk("%s\n", buf);
 	printk("Journal End");
-
 	fput(file);
 	return;
 }
