@@ -1690,6 +1690,7 @@ int fat_fill_super(struct super_block *sb, void *data, int silent, int isvfat,
 
 	write_journal(sbi->journal_fd, "Initializing super block\n");
 	mutex_init(&sbi->s_lock);
+	write_journal(sbi->journal_fd, "Initializing cluster size to %d\n", sb->s_blocksize * sbi->sec_per_clus); 
 	sbi->cluster_size = sb->s_blocksize * sbi->sec_per_clus;
 	sbi->cluster_bits = ffs(sbi->cluster_size) - 1;
 	sbi->fats = bpb.fat_fats;

@@ -18,11 +18,11 @@ int open_journal(struct msdos_sb_info *sbi) {
 	return -1;
 }
 
-void write_journal(int journal_fd, char* data) {
+void write_journal(int journal_fd, char* data, ...) {
 	struct file *file = fget(journal_fd);
 	loff_t offset;
 	if (!file) {
-		printk("STUDENT MESSAGE: Failed to open journal file");
+		printk("STUDENT MESSAGE: Failed to open journal file for fat");
 		return;
 	}
 	
@@ -34,8 +34,15 @@ void write_journal(int journal_fd, char* data) {
 		return;
 	}
 
+	// Format string (just like a printk)
+	char buf[512];
+	va_list args;
+	va_start(args, data);
+	vsprintf(buf, data, args);
+	va_end(args); 
+
 	// Write to file
-	if (vfs_write(file, data, strlen(data), &offset) < 0) {
+	if (vfs_write(file, buf, strlen(buf), &offset) < 0) {
 		printk("STUDENT MESSAGE: Failed to write to file");
 		fput(file);
 		return;
@@ -46,7 +53,7 @@ void write_journal(int journal_fd, char* data) {
 
 void print_journal(int journal_fd) {
 	struct file *file ;
-	char buf[100]; // We assume that the size is sufficient
+	char buf[512]; // We assume that the size is sufficient
 
 	file = fget(journal_fd);
 	if (!file) {
