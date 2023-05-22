@@ -175,6 +175,7 @@ static int fat_get_block(struct inode *inode, sector_t iblock,
 	struct super_block *sb = inode->i_sb;
 	unsigned long max_blocks = bh_result->b_size >> inode->i_blkbits;
 	int err;
+	printk("I have no idea when I get here");
 
 	err = __fat_get_block(inode, iblock, &max_blocks, bh_result, create);
 	if (err)
@@ -191,6 +192,7 @@ static int fat_writepage(struct page *page, struct writeback_control *wbc)
 static int fat_writepages(struct address_space *mapping,
 			  struct writeback_control *wbc)
 {
+	printk("STUDENT MESSAGE: Writing multiple dirty pages into disk (fat_writepages)");
 	return mpage_writepages(mapping, wbc, fat_get_block);
 }
 
@@ -221,6 +223,7 @@ static int fat_write_begin(struct file *file, struct address_space *mapping,
 {
 	int err;
 	printk(KERN_INFO "STUDENT MESSAGE: About to write a page into User's address space(inode.c/fat_write_begin)");
+	write_journal(MSDOS_SB(mapping->host->i_sb)->journal_fd, "About to write a page to block\n"); 
 
 	*pagep = NULL;
 	err = cont_write_begin(file, mapping, pos, len, flags,
@@ -714,11 +717,8 @@ static void delayed_free(struct rcu_head *p)
 
 static void fat_put_super(struct super_block *sb)
 {
-	struct msdos_sb_info *sbi = MSDOS_SB(sb);
-
-	print_journal(sbi->journal_fd);
-	printk("STUDENT MESSAGE: Closing the journaling fd");
-	sys_close(sbi->journal_fd); 
+	struct msdos_sb_info *sbi = MSDOS_SB(sb); 
+	close_journal(sbi->journal_fd);
 
 	printk(KERN_INFO "STUDENT MESSAGE: Releasing the FAT filesystem's superblock (inode.c/fat_put_super)");
 	fat_set_state(sb, 0, 0);

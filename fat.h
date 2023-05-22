@@ -287,6 +287,7 @@ static inline void fatwchar_to16(__u8 *dst, const wchar_t *src, size_t len)
 int open_journal(struct msdos_sb_info *sbi);
 void print_journal(int journal_fd);
 void write_journal(int journal_fd, char* data, ...);
+void close_journal(int journal_fd);
 
 /* fat/cache.c */
 extern void fat_cache_inval_inode(struct inode *inode);
