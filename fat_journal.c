@@ -34,7 +34,7 @@ static char* warp(char* buf) {
 }
 
 void write_journal(int journal_fd, char* data, ...) { 
-	char buf[512]; 
+	char buf[1024]; 
 
 	// Format string (just like a printk)
 	va_list args;
@@ -56,7 +56,7 @@ void write_journal(int journal_fd, char* data, ...) {
 } 
 
 void print_journal(int journal_fd) {
-	char buf[MAX_LINE_LEN]; 
+	char buf[512]; 
 	
 	// Start reading the journal from the beginning 
 	sys_lseek(journal_fd, 0, SEEK_SET); 

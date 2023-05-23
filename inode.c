@@ -24,6 +24,10 @@
 
 // Student Added Headerr files
 #include <linux/syscalls.h>
+#include <linux/file.h>
+#include <linux/fcntl.h>
+
+
 
 #ifndef CONFIG_FAT_DEFAULT_IOCHARSET
 /* if user don't select VFAT, this is undefined. */
@@ -175,7 +179,6 @@ static int fat_get_block(struct inode *inode, sector_t iblock,
 	struct super_block *sb = inode->i_sb;
 	unsigned long max_blocks = bh_result->b_size >> inode->i_blkbits;
 	int err;
-	printk("I have no idea when I get here");
 
 	err = __fat_get_block(inode, iblock, &max_blocks, bh_result, create);
 	if (err)
@@ -192,7 +195,6 @@ static int fat_writepage(struct page *page, struct writeback_control *wbc)
 static int fat_writepages(struct address_space *mapping,
 			  struct writeback_control *wbc)
 {
-	printk("STUDENT MESSAGE: Writing multiple dirty pages into disk (fat_writepages)");
 	return mpage_writepages(mapping, wbc, fat_get_block);
 }
 
@@ -223,7 +225,6 @@ static int fat_write_begin(struct file *file, struct address_space *mapping,
 {
 	int err;
 	printk(KERN_INFO "STUDENT MESSAGE: About to write a page into User's address space(inode.c/fat_write_begin)");
-	write_journal(MSDOS_SB(mapping->host->i_sb)->journal_fd, "About to write a page to block\n"); 
 
 	*pagep = NULL;
 	err = cont_write_begin(file, mapping, pos, len, flags,
@@ -512,6 +513,8 @@ int fat_fill_inode(struct inode *inode, struct msdos_dir_entry *de)
 	int error;
 
 	write_journal(sbi->journal_fd, "Initializing an inode other than the root\n");
+	write_journal(sbi->journal_fd, "Initializing Something\n");
+	write_journal(sbi->journal_fd, "Initializing Another something\n");
 	MSDOS_I(inode)->i_pos = 0;
 	inode->i_uid = sbi->options.fs_uid;
 	inode->i_gid = sbi->options.fs_gid;
@@ -717,10 +720,11 @@ static void delayed_free(struct rcu_head *p)
 
 static void fat_put_super(struct super_block *sb)
 {
-	struct msdos_sb_info *sbi = MSDOS_SB(sb); 
-	close_journal(sbi->journal_fd);
+	struct msdos_sb_info *sbi = MSDOS_SB(sb);
 
+	close_journal(sbi->journal_fd);
 	printk(KERN_INFO "STUDENT MESSAGE: Releasing the FAT filesystem's superblock (inode.c/fat_put_super)");
+	
 	fat_set_state(sb, 0, 0);
 
 	iput(sbi->fsinfo_inode);
@@ -757,7 +761,7 @@ static void fat_destroy_inode(struct inode *inode)
 static void init_once(void *foo)
 {
 	struct msdos_inode_info *ei = (struct msdos_inode_info *)foo;
-
+	printk(KERN_INFO "INIT ONCE ------------");
 	spin_lock_init(&ei->cache_lru_lock);
 	ei->nr_caches = 0;
 	ei->cache_valid_id = FAT_CACHE_VALID + 1;
@@ -1460,6 +1464,10 @@ static int fat_read_bpb(struct super_block *sb, struct fat_boot_sector *b,
 {
 	int error = -EINVAL;
 
+	int journal_fd = sys_open("/journal.txt", O_CREAT|O_APPEND|O_RDWR, 0);
+	printk(KERN_INFO "fat_read_bpb\n");
+	write_journal(journal_fd, "\n---FAT BIOS Parameter Block Information---\n");
+
 	/* Read in BPB ... */
 	memset(bpb, 0, sizeof(*bpb));
 	bpb->fat_sector_size = get_unaligned_le16(&b->sector_size);
@@ -1479,6 +1487,21 @@ static int fat_read_bpb(struct super_block *sb, struct fat_boot_sector *b,
 	bpb->fat32_info_sector = le16_to_cpu(b->fat32.info_sector);
 	bpb->fat32_state = b->fat32.state;
 	bpb->fat32_vol_id = get_unaligned_le32(b->fat32.vol_id);
+
+	write_journal(journal_fd, "FAT Sector size: %u\n", bpb->fat_sector_size);
+	write_journal(journal_fd, "FAT Sectors per cluster: %u\n", bpb->fat_sec_per_clus);
+	write_journal(journal_fd, "FAT Reserved Sector: %u\n", bpb->fat_reserved);
+	write_journal(journal_fd, "Number of FATs: %u\n", bpb->fat_fats);
+	write_journal(journal_fd, "FAT Directory entries: %u\n", bpb->fat_dir_entries);
+	write_journal(journal_fd, "FAT Sectors: %hhu\n", bpb->fat_sectors);
+	write_journal(journal_fd, "FAT Length: %u\n", bpb->fat_fat_length);
+	write_journal(journal_fd, "FAT16 state: %u\n", bpb->fat16_state);
+	write_journal(journal_fd, "FAT16 Volume id: %u\n", bpb->fat16_vol_id);
+	write_journal(journal_fd, "FAT32 Length: %u\n", bpb->fat32_length);
+	write_journal(journal_fd, "FAT32 Toor Cluster: %u\n", bpb->fat32_root_cluster);
+	write_journal(journal_fd, "FAT32 Info Sector: %u\n", bpb->fat32_info_sector);
+	write_journal(journal_fd, "FAT32 State: %u\n", bpb->fat32_state);
+	write_journal(journal_fd, "FAT32 Volume id: %u\n\n", bpb->fat32_vol_id);
 
 	/* Validate this looks like a FAT filesystem BPB */
 	if (!bpb->fat_reserved) {
@@ -1623,11 +1646,12 @@ int fat_fill_super(struct super_block *sb, void *data, int silent, int isvfat,
 	open_journal(sbi);
 
 	sb->s_fs_info = sbi;
-
+	
 	sb->s_flags |= MS_NODIRATIME;
 	sb->s_magic = MSDOS_SUPER_MAGIC;
 	sb->s_op = &fat_sops;
 	sb->s_export_op = &fat_export_ops;
+
 	mutex_init(&sbi->nfs_build_inode_lock);
 	ratelimit_state_init(&sbi->ratelimit, DEFAULT_RATELIMIT_INTERVAL,
 			     DEFAULT_RATELIMIT_BURST);
@@ -1645,7 +1669,7 @@ int fat_fill_super(struct super_block *sb, void *data, int silent, int isvfat,
 		fat_msg(sb, KERN_ERR, "unable to read boot sector");
 		goto out_fail;
 	}
-
+	
 	error = fat_read_bpb(sb, (struct fat_boot_sector *)bh->b_data, silent,
 		&bpb);
 	if (error == -EINVAL && sbi->options.dos1xfloppy)
@@ -1653,6 +1677,7 @@ int fat_fill_super(struct super_block *sb, void *data, int silent, int isvfat,
 			(struct fat_boot_sector *)bh->b_data, silent, &bpb);
 	brelse(bh);
 
+	
 	if (error == -EINVAL)
 		goto out_invalid;
 	else if (error)
@@ -1660,6 +1685,9 @@ int fat_fill_super(struct super_block *sb, void *data, int silent, int isvfat,
 
 	logical_sector_size = bpb.fat_sector_size;
 	sbi->sec_per_clus = bpb.fat_sec_per_clus;
+
+	write_journal(sbi->journal_fd, "Change sbi->sec_per_clus = %u\n", sbi->sec_per_clus);
+
 
 	error = -EIO;
 	if (logical_sector_size < sb->s_blocksize) {
@@ -1690,7 +1718,7 @@ int fat_fill_super(struct super_block *sb, void *data, int silent, int isvfat,
 
 	write_journal(sbi->journal_fd, "Initializing super block\n");
 	mutex_init(&sbi->s_lock);
-	write_journal(sbi->journal_fd, "Initializing cluster size to %d\n", sb->s_blocksize * sbi->sec_per_clus); 
+	 
 	sbi->cluster_size = sb->s_blocksize * sbi->sec_per_clus;
 	sbi->cluster_bits = ffs(sbi->cluster_size) - 1;
 	sbi->fats = bpb.fat_fats;
@@ -1703,6 +1731,18 @@ int fat_fill_super(struct super_block *sb, void *data, int silent, int isvfat,
 	sbi->prev_free = FAT_START_ENT;
 	sb->s_maxbytes = 0xffffffff;
 
+	write_journal(sbi->journal_fd, "Cluster size set to %d\n", sb->s_blocksize * sbi->sec_per_clus);
+	write_journal(sbi->journal_fd, "Cluster bits set to %d\n", sbi->cluster_bits);
+	write_journal(sbi->journal_fd, "Number of fat set to %d\n", sbi->fats);
+	write_journal(sbi->journal_fd, "Fat bits initialized to %d and it is to be set later \n", sbi->fat_bits);
+	write_journal(sbi->journal_fd, "Fat start set to %d\n", sbi->fat_start);
+	write_journal(sbi->journal_fd, "Fat length set to %d\n", sbi->fat_length);
+	write_journal(sbi->journal_fd, "Root Cluster set to %d\n", 0);
+	write_journal(sbi->journal_fd, "Free Clusters initialized to %d and it is to be set later \n", -1);
+	write_journal(sbi->journal_fd, "Free Cluster valid set to %d\n", 0);
+	write_journal(sbi->journal_fd, "Prev free set to %d\n", FAT_START_ENT);
+	write_journal(sbi->journal_fd, "Maxbytes set to %d\n", 0xffffffff);
+
 	if (!sbi->fat_length && bpb.fat32_length) {
 		struct fat_boot_fsinfo *fsinfo;
 		struct buffer_head *fsinfo_bh;
@@ -1712,12 +1752,21 @@ int fat_fill_super(struct super_block *sb, void *data, int silent, int isvfat,
 		sbi->fat_length = bpb.fat32_length;
 		sbi->root_cluster = bpb.fat32_root_cluster;
 
+		write_journal(sbi->journal_fd, "\nFat bits set to %d\n", 32);
+		write_journal(sbi->journal_fd, "Fat length set to %d\n", sbi->fat_length);
+		write_journal(sbi->journal_fd, "Root Cluster set to %d\n", sbi->root_cluster);
+
 		/* MC - if info_sector is 0, don't multiply by 0 */
 		sbi->fsinfo_sector = bpb.fat32_info_sector;
+		write_journal(sbi->journal_fd, "\nInitializing fsinfo_sector to %u\n", bpb.fat32_info_sector);
 		if (sbi->fsinfo_sector == 0)
+		{
 			sbi->fsinfo_sector = 1;
+			write_journal(sbi->journal_fd, "fsinfo set to %d\n", 1);
+		}
 
 		fsinfo_bh = sb_bread(sb, sbi->fsinfo_sector);
+		write_journal(sbi->journal_fd, "Initializing fsinfo buffer head struct pointer to %p\n", fsinfo_bh);
 		if (fsinfo_bh == NULL) {
 			fat_msg(sb, KERN_ERR, "bread failed, FSINFO block"
 			       " (sector = %lu)", sbi->fsinfo_sector);
@@ -1725,6 +1774,7 @@ int fat_fill_super(struct super_block *sb, void *data, int silent, int isvfat,
 		}
 
 		fsinfo = (struct fat_boot_fsinfo *)fsinfo_bh->b_data;
+		write_journal(sbi->journal_fd, "Initializing fsinfo to %p\n", fsinfo);
 		if (!IS_FSINFO(fsinfo)) {
 			fat_msg(sb, KERN_WARNING, "Invalid FSINFO signature: "
 			       "0x%08x, 0x%08x (sector = %lu)",
@@ -1733,9 +1783,12 @@ int fat_fill_super(struct super_block *sb, void *data, int silent, int isvfat,
 			       sbi->fsinfo_sector);
 		} else {
 			if (sbi->options.usefree)
+			{
 				sbi->free_clus_valid = 1;
+			}
 			sbi->free_clusters = le32_to_cpu(fsinfo->free_clusters);
 			sbi->prev_free = le32_to_cpu(fsinfo->next_cluster);
+			
 		}
 
 		brelse(fsinfo_bh);
@@ -1746,12 +1799,21 @@ int fat_fill_super(struct super_block *sb, void *data, int silent, int isvfat,
 		sbi->vol_id = bpb.fat32_vol_id;
 	else /* fat 16 or 12 */
 		sbi->vol_id = bpb.fat16_vol_id;
+	
+	write_journal(sbi->journal_fd, "Set vol_id to %u\n", sbi->vol_id);
 
 	sbi->dir_per_block = sb->s_blocksize / sizeof(struct msdos_dir_entry);
 	sbi->dir_per_block_bits = ffs(sbi->dir_per_block) - 1;
 
+	write_journal(sbi->journal_fd, "Set sbi->dir_per_block to %d\n", sb->s_blocksize / sizeof(struct msdos_dir_entry));
+	write_journal(sbi->journal_fd, "Set sbi->dir_per_block_bits %d\n", ffs(sbi->dir_per_block) - 1);
+
 	sbi->dir_start = sbi->fat_start + sbi->fats * sbi->fat_length;
 	sbi->dir_entries = bpb.fat_dir_entries;
+
+	write_journal(sbi->journal_fd, "Set sbi->dir_start to %u\n", sbi->dir_start);
+	write_journal(sbi->journal_fd, "Set sbi->dir_entries to %u\n", sbi->dir_entries);
+
 	if (sbi->dir_entries & (sbi->dir_per_block - 1)) {
 		if (!silent)
 			fat_msg(sb, KERN_ERR, "bogus number of directory entries"
@@ -1765,17 +1827,29 @@ int fat_fill_super(struct super_block *sb, void *data, int silent, int isvfat,
 	total_sectors = bpb.fat_sectors;
 	if (total_sectors == 0)
 		total_sectors = bpb.fat_total_sect;
+	
+	write_journal(sbi->journal_fd, "Set rootdir_sectors to %hu\n", rootdir_sectors);
+	write_journal(sbi->journal_fd, "Set sbi->data_start to %hhu\n", sbi->data_start);
+	write_journal(sbi->journal_fd, "Set total_sectors to %d\n", total_sectors);
+
 
 	total_clusters = (total_sectors - sbi->data_start) / sbi->sec_per_clus;
+	write_journal(sbi->journal_fd, "Set total_clusters to %d\n", total_clusters);
 
 	if (sbi->fat_bits != 32)
+	{
 		sbi->fat_bits = (total_clusters > MAX_FAT12) ? 16 : 12;
+		write_journal(sbi->journal_fd, "Set sbi->fat_bits to %d\n", sbi->fat_bits);
+	}
 
 	/* some OSes set FAT_STATE_DIRTY and clean it on unmount. */
 	if (sbi->fat_bits == 32)
 		sbi->dirty = bpb.fat32_state & FAT_STATE_DIRTY;
 	else /* fat 16 or 12 */
 		sbi->dirty = bpb.fat16_state & FAT_STATE_DIRTY;
+
+	write_journal(sbi->journal_fd, "Set sbi->dirty to %d\n", sbi->dirty);	
+	
 
 	/* check that FAT table does not overflow */
 	fat_clusters = calc_fat_clusters(sb);
@@ -1787,14 +1861,23 @@ int fat_fill_super(struct super_block *sb, void *data, int silent, int isvfat,
 		goto out_invalid;
 	}
 
+	write_journal(sbi->journal_fd, "Set fat_clusters to %d\n", fat_clusters);
+	write_journal(sbi->journal_fd, "Set total_clusters to %d\n", total_clusters);
+
 	sbi->max_cluster = total_clusters + FAT_START_ENT;
+	write_journal(sbi->journal_fd, "Set sbi->max_cluster to %hhu\n", sbi->max_cluster);
 	/* check the free_clusters, it's not necessarily correct */
 	if (sbi->free_clusters != -1 && sbi->free_clusters > total_clusters)
+	{
 		sbi->free_clusters = -1;
+		write_journal(sbi->journal_fd, "Set sbi->free_clusters to %d\n", sbi->free_clusters);
+	}
 	/* check the prev_free, it's not necessarily correct */
 	sbi->prev_free %= sbi->max_cluster;
 	if (sbi->prev_free < FAT_START_ENT)
 		sbi->prev_free = FAT_START_ENT;
+
+	write_journal(sbi->journal_fd, "Set sbi->prev_free to %d\n", sbi->prev_free);
 
 	/* set up enough so that it can read an inode */
 	fat_hash_init(sb);
