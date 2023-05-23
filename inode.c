@@ -761,7 +761,6 @@ static void fat_destroy_inode(struct inode *inode)
 static void init_once(void *foo)
 {
 	struct msdos_inode_info *ei = (struct msdos_inode_info *)foo;
-	printk(KERN_INFO "INIT ONCE ------------");
 	spin_lock_init(&ei->cache_lru_lock);
 	ei->nr_caches = 0;
 	ei->cache_valid_id = FAT_CACHE_VALID + 1;
@@ -1463,8 +1462,8 @@ static int fat_read_bpb(struct super_block *sb, struct fat_boot_sector *b,
 	int silent, struct fat_bios_param_block *bpb)
 {
 	int error = -EINVAL;
-
-	int journal_fd = sys_open("/journal.txt", O_CREAT|O_APPEND|O_RDWR, 0);
+	struct msdos_sb_info *sbi = MSDOS_SB(sb);
+	int journal_fd = sbi->journal_fd;
 	printk(KERN_INFO "fat_read_bpb\n");
 	write_journal(journal_fd, "\n---FAT BIOS Parameter Block Information---\n");
 
@@ -1716,7 +1715,7 @@ int fat_fill_super(struct super_block *sb, void *data, int silent, int isvfat,
 		brelse(bh_resize);
 	}
 
-	write_journal(sbi->journal_fd, "Initializing super block\n");
+	write_journal(sbi->journal_fd, "---Initializing superblock---\n");
 	mutex_init(&sbi->s_lock);
 	 
 	sbi->cluster_size = sb->s_blocksize * sbi->sec_per_clus;
@@ -1984,7 +1983,6 @@ EXPORT_SYMBOL_GPL(fat_fill_super);
  */
 static int writeback_inode(struct inode *inode)
 {
-
 	int ret;
 
 	/* if we used wait=1, sync_inode_metadata waits for the io for the
