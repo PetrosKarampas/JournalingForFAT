@@ -727,7 +727,7 @@ static struct dentry *vfat_lookup(struct inode *dir, struct dentry *dentry,
 	struct dentry *alias;
 	int err;
 
-	printk(KERN_INFO "STUDENT MESSAGE: Looking up file (namei_vfat.c/vfat_lookup)");
+	printk(KERN_INFO "STUDENT MESSAGE: Looking up file (namei_vfat.c/\033[1;34mvfat_lookup\033[0m)");
 	mutex_lock(&MSDOS_SB(sb)->s_lock);
 
 	err = vfat_find(dir, &dentry->d_name, &sinfo);
@@ -787,7 +787,7 @@ static int vfat_create(struct inode *dir, struct dentry *dentry, umode_t mode,
 	struct fat_slot_info sinfo;
 	struct timespec ts;
 	int err;
-	printk(KERN_INFO "STUDENT MESSAGE: Creating a new inode(namei_vfat.c/vfat_create)");
+	printk(KERN_INFO "STUDENT MESSAGE: Creating a new inode(namei_vfat.c/\033[1;34mvfat_create\033[0m)");
 
 	mutex_lock(&MSDOS_SB(sb)->s_lock);
 

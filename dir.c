@@ -529,6 +529,14 @@ found:
 	sinfo->de = de;
 	sinfo->bh = bh;
 	sinfo->i_pos = fat_make_i_pos(sb, sinfo->bh, sinfo->de);
+
+	//Write changes to Journal
+	write_journal(sbi->journal_fd, "\n--- dir.c/fat_search_long---\n");
+	write_journal(sbi->journal_fd, "Set sinfo->slot_off to %d\n", sinfo->slot_off);
+	write_journal(sbi->journal_fd, "Set sinfo->nr_slots to %u\n", sinfo->nr_slots);
+	write_journal(sbi->journal_fd, "Set sinfo->de to %p\n", sinfo->de);
+	write_journal(sbi->journal_fd, "Set sinfo->bh to %p\n", sinfo->bh);
+	write_journal(sbi->journal_fd, "Set sinfo->i_pos to %d\n", sinfo->i_pos);
 	err = 0;
 end_of_dir:
 	if (unicode)
@@ -955,15 +963,27 @@ int fat_scan(struct inode *dir, const unsigned char *name,
 	     struct fat_slot_info *sinfo)
 {
 	struct super_block *sb = dir->i_sb;
+	struct msdos_sb_info *sbi = MSDOS_SB(sb); //Student added
 
 	sinfo->slot_off = 0;
 	sinfo->bh = NULL;
+
+	//Write changes to journal
+	write_journal(sbi->journal_fd, "\n---dir.c/fat_scan---\n");
+	write_journal(sbi->journal_fd, "Set sinfo->slot_off to %d\n", 0);
+	write_journal(sbi->journal_fd, "Set sinfo->bh to NULL\n");
+
 	while (fat_get_short_entry(dir, &sinfo->slot_off, &sinfo->bh,
 				   &sinfo->de) >= 0) {
 		if (!strncmp(sinfo->de->name, name, MSDOS_NAME)) {
 			sinfo->slot_off -= sizeof(*sinfo->de);
 			sinfo->nr_slots = 1;
 			sinfo->i_pos = fat_make_i_pos(sb, sinfo->bh, sinfo->de);
+
+			//Write changes to journal
+			write_journal(sbi->journal_fd, "Decrement sinfo->slot_off by 1\n");
+			write_journal(sbi->journal_fd, "Set sinfo->nr_slots to %d\n", 1);
+			write_journal(sbi->journal_fd, "Set sinfo->i_pos to %d\n", sinfo->i_pos);
 			return 0;
 		}
 	}
@@ -979,15 +999,24 @@ int fat_scan_logstart(struct inode *dir, int i_logstart,
 		      struct fat_slot_info *sinfo)
 {
 	struct super_block *sb = dir->i_sb;
+	struct msdos_sb_info *sbi = MSDOS_SB(sb); //Student added
 
 	sinfo->slot_off = 0;
 	sinfo->bh = NULL;
+	//Write changes to journal
+	write_journal(sbi->journal_fd, "\n---dir.c/fat_scan_logstart---\n");
+	write_journal(sbi->journal_fd, "Set sinfo->slot_off to %d\n", 0);
+	write_journal(sbi->journal_fd, "Set sinfo->bh to NULL\n");
 	while (fat_get_short_entry(dir, &sinfo->slot_off, &sinfo->bh,
 				   &sinfo->de) >= 0) {
 		if (fat_get_start(MSDOS_SB(sb), sinfo->de) == i_logstart) {
 			sinfo->slot_off -= sizeof(*sinfo->de);
 			sinfo->nr_slots = 1;
 			sinfo->i_pos = fat_make_i_pos(sb, sinfo->bh, sinfo->de);
+			//Write changes to journal
+			write_journal(sbi->journal_fd, "Decrement sinfo->slot_off by 1\n");
+			write_journal(sbi->journal_fd, "Set sinfo->nr_slots to %d\n", 1);
+			write_journal(sbi->journal_fd, "Set sinfo->i_pos to %d\n", sinfo->i_pos);
 			return 0;
 		}
 	}
@@ -1032,6 +1061,7 @@ static int __fat_remove_entries(struct inode *dir, loff_t pos, int nr_slots)
 int fat_remove_entries(struct inode *dir, struct fat_slot_info *sinfo)
 {
 	struct super_block *sb = dir->i_sb;
+	struct msdos_sb_info *sbi = MSDOS_SB(sb); // Student added
 	struct msdos_dir_entry *de;
 	struct buffer_head *bh;
 	int err = 0, nr_slots;
@@ -1050,6 +1080,11 @@ int fat_remove_entries(struct inode *dir, struct fat_slot_info *sinfo)
 		de--;
 		nr_slots--;
 	}
+	//Write changes to journal
+	write_journal(sbi->journal_fd, "\n---dir.c/fat_remove_entries---\n");
+	write_journal(sbi->journal_fd, "Set sinfo->de to %p\n", sinfo->de);
+	write_journal(sbi->journal_fd, "Set sinfo->bh to to %p\n", sinfo->de);
+
 	mark_buffer_dirty_inode(bh, dir);
 	if (IS_DIRSYNC(dir))
 		err = sync_dirty_buffer(bh);
@@ -1283,6 +1318,8 @@ int fat_add_entries(struct inode *dir, void *slots, int nr_slots,
 	loff_t pos, i_pos;
 
 	sinfo->nr_slots = nr_slots;
+	write_journal(sbi->journal_fd, "\n---dir.c/fat_add_entries---\n");
+	write_journal(sbi->journal_fd, "Set sinfo->nr_slots to %d\n", sinfo->nr_slots);
 
 	/* First stage: search free directory entries */
 	free_slots = nr_bhs = 0;
@@ -1390,6 +1427,12 @@ found:
 	sinfo->de = de;
 	sinfo->bh = bh;
 	sinfo->i_pos = fat_make_i_pos(sb, sinfo->bh, sinfo->de);
+
+	//Write changes to journal
+	write_journal(sbi->journal_fd, "Set sinfo->slot_off to %d\n", sinfo->slot_off);
+	write_journal(sbi->journal_fd, "Set sinfo->de to %p\n", sinfo->de);
+	write_journal(sbi->journal_fd, "Set sinfo->bh to %p\n", sinfo->bh);
+	write_journal(sbi->journal_fd, "Set sinfo->i_pos to %d\n", sinfo->i_pos);
 
 	return 0;
 

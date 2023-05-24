@@ -154,7 +154,7 @@ static int fat32_ent_get(struct fat_entry *fatent)
 
 static void fat12_ent_put(struct fat_entry *fatent, int new)
 {
-	printk(KERN_INFO "\nStudent Message: Adding a FAT12 entry in the table\n");
+	printk(KERN_INFO "\nSTUDENT MESSAGE: Adding a FAT12 entry in the table\n");
 	u8 **ent12_p = fatent->u.ent12_p;
 
 	if (new == FAT_ENT_EOF)
@@ -177,7 +177,7 @@ static void fat12_ent_put(struct fat_entry *fatent, int new)
 
 static void fat16_ent_put(struct fat_entry *fatent, int new)
 {
-	printk(KERN_INFO "STUDENT MESSAGE: Adding a FAT16 entry in the table (fatent.c/fat16_ent_put)\n");
+	printk(KERN_INFO "STUDENT MESSAGE: Adding a FAT16 entry in the table (fatent.c/\033[1;34mfat16_ent_put\033[0m)\n");
 	if (new == FAT_ENT_EOF)
 		new = EOF_FAT16;
 
@@ -187,7 +187,7 @@ static void fat16_ent_put(struct fat_entry *fatent, int new)
 
 static void fat32_ent_put(struct fat_entry *fatent, int new)
 {
-	printk(KERN_INFO "\nStudent Message: Adding a FAT32 entry in the table\n");
+	printk(KERN_INFO "\nSTUDENT MESSAGE: Adding a FAT32 entry in the table fatent.c/fat32_ent_put)\n");
 	WARN_ON(new & 0xf0000000);
 	new |= le32_to_cpu(*fatent->u.ent32_p) & ~0x0fffffff;
 	*fatent->u.ent32_p = cpu_to_le32(new);
@@ -291,6 +291,7 @@ static inline void unlock_fat(struct msdos_sb_info *sbi)
 void fat_ent_access_init(struct super_block *sb)
 {
 	struct msdos_sb_info *sbi = MSDOS_SB(sb);
+	printk(KERN_INFO "STUDENT MESSAGE: \033[1;34mfatent.c/fat_ent_access_init\033[0m");
 
 	mutex_init(&sbi->fat_lock);
 
@@ -308,6 +309,10 @@ void fat_ent_access_init(struct super_block *sb)
 		sbi->fatent_ops = &fat12_ops;
 		break;
 	}
+	//Write changes to journal
+	write_journal(sbi->journal_fd, "\n---fatent.c/fat_ent_access_init()---\n");
+	write_journal(sbi->journal_fd, "Set sbi->fatent_shift to %d\n", sbi->fatent_shift);
+	write_journal(sbi->journal_fd, "Set sbi->fatent_ops to %p\n", sbi->fatent_ops);
 }
 
 static void mark_fsinfo_dirty(struct super_block *sb)
@@ -411,7 +416,7 @@ error:
 int fat_ent_write(struct inode *inode, struct fat_entry *fatent,
 		  int new, int wait)
 {
-	printk(KERN_INFO "\n Student Message: writing fat entry (file: fs/fat/fatent.c");
+	printk(KERN_INFO "\nSTUDENT MESSAGE: Writing fat entry (file: fs/fat/fatent.c/\033[1;34mfat_ent_write\033[0m)");
 	struct super_block *sb = inode->i_sb;
 	const struct fatent_operations *ops = MSDOS_SB(sb)->fatent_ops;
 	int err;
@@ -532,6 +537,10 @@ int fat_alloc_clusters(struct inode *inode, int *cluster, int nr_cluster)
 	/* Couldn't allocate the free entries */
 	sbi->free_clusters = 0;
 	sbi->free_clus_valid = 1;
+	//Write changes to journal
+	write_journal(sbi->journal_fd, "\n---fatent.c/fat_alloc_clusters---\n");
+	write_journal(sbi->journal_fd, "Set sbi->free_clusters to %d\n", sbi->free_clusters);
+	write_journal(sbi->journal_fd, "Set sbi->free_clus_valid to %d\n", sbi->free_clus_valid);
 	err = -ENOSPC;
 
 out:
@@ -599,6 +608,9 @@ int fat_free_clusters(struct inode *inode, int cluster)
 		ops->ent_put(&fatent, FAT_ENT_FREE);
 		if (sbi->free_clusters != -1) {
 			sbi->free_clusters++;
+			//Write changes to journal
+			write_journal(sbi->journal_fd, "\n---fatent.c/fat_free_clusters---\n");
+			write_journal(sbi->journal_fd, "Increment sbi->free_clusters by %d\n", 1);
 			dirty_fsinfo = 1;
 		}
 
@@ -690,6 +702,11 @@ int fat_count_free_clusters(struct super_block *sb)
 	}
 	sbi->free_clusters = free;
 	sbi->free_clus_valid = 1;
+	//Write changes to journal
+	write_journal(sbi->journal_fd, "\n---fatent.c/fat_count_free_clusters---\n");
+	write_journal(sbi->journal_fd, "Set sbi->free_clusters to %d\n", free);
+	write_journal(sbi->journal_fd, "Set sbi->free_clus_valid to %d\n", 1);
+
 	mark_fsinfo_dirty(sb);
 	fatent_brelse(&fatent);
 out:

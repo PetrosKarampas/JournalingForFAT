@@ -4,7 +4,7 @@
 
 #define MAX_LINE_LEN 51
 
-const char *LINE = "==================================================\n";
+const char *LINE = "\033[1;32m==================================================\033[0m\n";
 
 
 int open_journal(struct msdos_sb_info *sbi) { 
@@ -13,7 +13,7 @@ int open_journal(struct msdos_sb_info *sbi) {
 	if (sbi->journal_fd >= 0) {
 		printk("STUDENT MESSAGE: Opened the journal file succesfully");
 		// Make first write 
-		write_journal(sbi->journal_fd, "\t\t\tSTART OF JOURNAL\n%s", LINE); 
+		write_journal(sbi->journal_fd, "\t\t\t\033[1;32mSTART OF JOURNAL\033[0m\n%s", LINE); 
 		
 		return 0;
 	} 
@@ -29,7 +29,7 @@ static char* warp(char* buf) {
 	// If strlen(buf) % MAX_LINE_LEN > 0, fill the last buf with \0 and finish with \n
 	// If string is too large to be written in one line, break it
 	if(strlen(buf) > MAX_LINE_LEN) {
-		printk("There will be wrapping errors");
+		printk("STUDENT MESSAGE: There will be wrapping errors");
 	}
 }
 
@@ -61,7 +61,7 @@ void print_journal(int journal_fd) {
 	// Start reading the journal from the beginning 
 	sys_lseek(journal_fd, 0, SEEK_SET); 
 
-	printk(KERN_INFO "STUDENT MESSAGE: Printing the Journal:"); 
+	printk(KERN_INFO "STUDENT MESSAGE: \033[1;31mPrinting the Journal:\033[0m"); 
 	int bytes_read;
 	int bytes_total = 0;
 	while((bytes_read = sys_read(journal_fd, buf, sizeof(buf))) > 0) {
@@ -69,7 +69,7 @@ void print_journal(int journal_fd) {
 		bytes_total += bytes_read;
 		memset(buf, 0, sizeof(buf)); // Clean the buffer, otherwise there are overlaps. 
 	} 
-	printk("Read %d bytes in total\n", bytes_total);
+	printk("\033[1;31mRead %d bytes in total\033[0m\n", bytes_total);
 	return;
 }
 
@@ -77,16 +77,15 @@ void print_journal(int journal_fd) {
 static void overload_journal(int journal_fd) {
 	int i = 0;
 	while (i < 150000) { 
-		write_journal(journal_fd, "OVERLOADING %d!!!\n", i);	
+		write_journal(journal_fd, "\033[1;31mOVERLOADING\033[0m %d!!!\n", i);	
 		i++;
 	}
-	write_journal(journal_fd, "\n================\nEnd of Journal\n");
 	print_journal(journal_fd);
 	return;
 } 
 
 void close_journal(int journal_fd) { 
-	write_journal(journal_fd, "%s\t\t\tEND OF JOURNAL\n", LINE);
+	write_journal(journal_fd, "%s\t\t\t \033[1;32mEND OF JOURNAL\033[0m \n", LINE);
 	print_journal(journal_fd);
 	printk("STUDENT MESSAGE: Closing the journaling fd");
 	sys_close(journal_fd); 

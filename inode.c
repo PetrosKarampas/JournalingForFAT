@@ -224,7 +224,7 @@ static int fat_write_begin(struct file *file, struct address_space *mapping,
 			struct page **pagep, void **fsdata)
 {
 	int err;
-	printk(KERN_INFO "STUDENT MESSAGE: About to write a page into User's address space(inode.c/fat_write_begin)");
+	printk(KERN_INFO "STUDENT MESSAGE: About to write %u bytes at offset: %lld. (inode.c/\033[1;34mfat_write_begin\033[0m)", len, pos);
 
 	*pagep = NULL;
 	err = cont_write_begin(file, mapping, pos, len, flags,
@@ -239,6 +239,7 @@ static int fat_write_end(struct file *file, struct address_space *mapping,
 			loff_t pos, unsigned len, unsigned copied,
 			struct page *pagep, void *fsdata)
 {
+	printk(KERN_INFO "STUDENT MESSAGE: Succesfully copied %u bytes. inode.c/\033[1;34mfat_write_end\033[0m)", copied);
 	struct inode *inode = mapping->host;
 	int err;
 	err = generic_write_end(file, mapping, pos, len, copied, pagep, fsdata);
@@ -513,8 +514,7 @@ int fat_fill_inode(struct inode *inode, struct msdos_dir_entry *de)
 	int error;
 
 	write_journal(sbi->journal_fd, "Initializing an inode other than the root\n");
-	write_journal(sbi->journal_fd, "Initializing Something\n");
-	write_journal(sbi->journal_fd, "Initializing Another something\n");
+	
 	MSDOS_I(inode)->i_pos = 0;
 	inode->i_uid = sbi->options.fs_uid;
 	inode->i_gid = sbi->options.fs_gid;
@@ -588,7 +588,7 @@ static inline void fat_unlock_build_inode(struct msdos_sb_info *sbi)
 struct inode *fat_build_inode(struct super_block *sb,
 			struct msdos_dir_entry *de, loff_t i_pos)
 {
-	printk(KERN_INFO "STUDENT MESSAGE: Creating a new inode (inode.c/fat_build_inode)");
+	printk(KERN_INFO "STUDENT MESSAGE: Creating a new inode (inode.c/\033[1;34mfat_build_inode\033[0m)");
 	struct inode *inode;
 	int err;
 
@@ -648,6 +648,7 @@ static void fat_free_eofblocks(struct inode *inode)
 
 static void fat_evict_inode(struct inode *inode)
 {
+	printk(KERN_INFO "STUDENT MESSAGE: Unhashing the F-d-c entry inode.c/\033[1;34mfat_evict_inode\033[0m)\n");
 	truncate_inode_pages_final(&inode->i_data);
 	if (!inode->i_nlink) {
 		inode->i_size = 0;
@@ -723,7 +724,7 @@ static void fat_put_super(struct super_block *sb)
 	struct msdos_sb_info *sbi = MSDOS_SB(sb);
 
 	close_journal(sbi->journal_fd);
-	printk(KERN_INFO "STUDENT MESSAGE: Releasing the FAT filesystem's superblock (inode.c/fat_put_super)");
+	printk(KERN_INFO "STUDENT MESSAGE: Releasing the FAT filesystem's superblock (inode.c/\033[1;34mfat_put_super\033[0m)");
 	
 	fat_set_state(sb, 0, 0);
 
@@ -737,9 +738,14 @@ static struct kmem_cache *fat_inode_cachep;
 
 static struct inode *fat_alloc_inode(struct super_block *sb)
 {
-	printk(KERN_INFO "STUDENT MESSAGE: Allocating new inode for FAT (inode.c/fat_alloc_inode)");
+	printk(KERN_INFO "STUDENT MESSAGE: Allocating new inode for FAT (inode.c/\033[1;34mfat_alloc_inode\033[0m)");
 	struct msdos_inode_info *ei;
+	struct msdos_sb_info *sbi = MSDOS_SB(sb); 
 	ei = kmem_cache_alloc(fat_inode_cachep, GFP_NOFS);
+	
+	//Write changes to journal
+	write_journal(sbi->journal_fd, "Set (msdos_inode_info) ei to %d\n", ei);
+
 	if (!ei)
 		return NULL;
 
@@ -755,6 +761,7 @@ static void fat_i_callback(struct rcu_head *head)
 
 static void fat_destroy_inode(struct inode *inode)
 {
+	printk(KERN_INFO "STUDENT MESSAGE: Destroy Inode inode.c/\033[1;34mfat_destroy_inode\033[0m)");
 	call_rcu(&inode->i_rcu, fat_i_callback);
 }
 
@@ -897,7 +904,7 @@ retry:
 static int fat_write_inode(struct inode *inode, struct writeback_control *wbc)
 {
 	int err;
-	printk(KERN_INFO "STUDENT MESSAGE: Updating an inode (inode.c/fat_write_inode)");
+	printk(KERN_INFO "STUDENT MESSAGE: Updating an inode (inode.c/\033[1;34mfat_write_inode\033[0m)");
 
 	if (inode->i_ino == MSDOS_FSINFO_INO) {
 		struct super_block *sb = inode->i_sb;
@@ -1621,6 +1628,7 @@ out:
 int fat_fill_super(struct super_block *sb, void *data, int silent, int isvfat,
 		   void (*setup)(struct super_block *))
 {
+	printk(KERN_INFO "STUDENT MESSAGE: Initializing the Superblock (msdos_sb_info) inode.c/fat_fill_super\n");
 	struct inode *root_inode = NULL, *fat_inode = NULL;
 	struct inode *fsinfo_inode = NULL;
 	struct buffer_head *bh;
@@ -1715,7 +1723,7 @@ int fat_fill_super(struct super_block *sb, void *data, int silent, int isvfat,
 		brelse(bh_resize);
 	}
 
-	write_journal(sbi->journal_fd, "---Initializing superblock---\n");
+	write_journal(sbi->journal_fd, "--- Initializing superblock (msdos_sb_info) ---\n");
 	mutex_init(&sbi->s_lock);
 	 
 	sbi->cluster_size = sb->s_blocksize * sbi->sec_per_clus;
@@ -1894,6 +1902,7 @@ int fat_fill_super(struct super_block *sb, void *data, int silent, int isvfat,
 	error = -EINVAL;
 	sprintf(buf, "cp%d", sbi->options.codepage);
 	sbi->nls_disk = load_nls(buf);
+	write_journal(sbi->journal_fd, "Set sbi->nls_disk to %p\n", sbi->nls_disk);
 	if (!sbi->nls_disk) {
 		fat_msg(sb, KERN_ERR, "codepage %s not found", buf);
 		goto out_fail;
@@ -1902,6 +1911,7 @@ int fat_fill_super(struct super_block *sb, void *data, int silent, int isvfat,
 	/* FIXME: utf8 is using iocharset for upper/lower conversion */
 	if (sbi->options.isvfat) {
 		sbi->nls_io = load_nls(sbi->options.iocharset);
+		write_journal(sbi->journal_fd, "Set sbi->nls_io to %p\n", sbi->nls_io);
 		if (!sbi->nls_io) {
 			fat_msg(sb, KERN_ERR, "IO charset %s not found",
 			       sbi->options.iocharset);
@@ -1911,33 +1921,60 @@ int fat_fill_super(struct super_block *sb, void *data, int silent, int isvfat,
 
 	error = -ENOMEM;
 	fat_inode = new_inode(sb);
+	write_journal(sbi->journal_fd, "Set fat_inode to %p\n", fat_inode);
 	if (!fat_inode)
 		goto out_fail;
 	fat_dummy_inode_init(fat_inode);
 	sbi->fat_inode = fat_inode;
+	write_journal(sbi->journal_fd, "Set sbi->fat_inode to %p\n", sbi->fat_inode);
 
 	fsinfo_inode = new_inode(sb);
+	
 	if (!fsinfo_inode)
 		goto out_fail;
 	fat_dummy_inode_init(fsinfo_inode);
 	fsinfo_inode->i_ino = MSDOS_FSINFO_INO;
 	sbi->fsinfo_inode = fsinfo_inode;
+	
 	insert_inode_hash(fsinfo_inode);
+
+	//Write changes to the Journal
+	write_journal(sbi->journal_fd, "Set fsinfo_inode to %p\n", fsinfo_inode);
+	write_journal(sbi->journal_fd, "Set fsinfo_inode->i_ino to %d\n", MSDOS_FSINFO_INO);
+	write_journal(sbi->journal_fd, "Set sbi->fsinfo_inode to %p\n", sbi->fsinfo_inode);
 
 	root_inode = new_inode(sb);
 	if (!root_inode)
 		goto out_fail;
 	root_inode->i_ino = MSDOS_ROOT_INO;
 	root_inode->i_version = 1;
+
+	//Write changes to the Journal
+	write_journal(sbi->journal_fd, "Set root_inode to %p\n", root_inode);
+	write_journal(sbi->journal_fd, "Set root_inode->i_ino to %d\n", MSDOS_ROOT_INO);
+	write_journal(sbi->journal_fd, "Set root_inode->i_version to %d\n", 1);
+
 	error = fat_read_root(root_inode);
+
+	//Write changes to the Journal
+	write_journal(sbi->journal_fd, "Set error to %d\n", error);
+
 	if (error < 0) {
 		iput(root_inode);
 		goto out_fail;
 	}
 	error = -ENOMEM;
+	
+	//Write changes to the Journal
+	write_journal(sbi->journal_fd, "Set error to %d\n", error);
+
 	insert_inode_hash(root_inode);
 	fat_attach(root_inode, 0);
 	sb->s_root = d_make_root(root_inode);
+
+	//Write changes to the Journal
+	write_journal(sbi->journal_fd, "Set sb->s_root to %p\n", sb->s_root);
+
 	if (!sb->s_root) {
 		fat_msg(sb, KERN_ERR, "get root inode failed");
 		goto out_fail;
@@ -1950,6 +1987,10 @@ int fat_fill_super(struct super_block *sb, void *data, int silent, int isvfat,
 					"mounting with \"discard\" option, but "
 					"the device does not support discard");
 	}
+
+	
+	
+
 
 	fat_set_state(sb, 1, 0);
 	return 0;

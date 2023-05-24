@@ -150,7 +150,7 @@ static long fat_generic_compat_ioctl(struct file *filp, unsigned int cmd,
 
 static int fat_file_release(struct inode *inode, struct file *filp)
 {
-	printk(KERN_INFO "STUDENT MESSAGE: Last reference to the file was closed, thus this fuction is called (file.c/fat_file_release)");
+	printk(KERN_INFO "STUDENT MESSAGE: Last reference to the file was closed, thus this fuction is called (file.c/\033[1;34mfat_file_release\033[0m])");
 	if ((filp->f_mode & FMODE_WRITE) &&
 	     MSDOS_SB(inode->i_sb)->options.flush) {
 		fat_flush_inodes(inode->i_sb, inode, NULL);
@@ -372,7 +372,7 @@ int fat_getattr(const struct path *path, struct kstat *stat,
 		u32 request_mask, unsigned int flags)
 {
 	struct inode *inode = d_inode(path->dentry);
-	printk(KERN_INFO "STUDENT MESSAGE: new* (file.c/fat_getattr)");
+	printk(KERN_INFO "STUDENT MESSAGE: (file.c/fat_getattr)");
 	generic_fillattr(inode, stat);
 	stat->blksize = MSDOS_SB(inode->i_sb)->cluster_size;
 
