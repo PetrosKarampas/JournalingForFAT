@@ -513,7 +513,7 @@ int fat_fill_inode(struct inode *inode, struct msdos_dir_entry *de)
 	struct msdos_sb_info *sbi = MSDOS_SB(inode->i_sb);
 	int error;
 
-	write_journal(sbi->journal_fd, "Initializing an inode other than the root\n");
+	write_journal(sbi->journal_fd, "Initializing an inode other than the root with i_uid: %d\n",sbi->options.fs_uid);
 	
 	MSDOS_I(inode)->i_pos = 0;
 	inode->i_uid = sbi->options.fs_uid;
